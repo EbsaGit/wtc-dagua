@@ -36,20 +36,20 @@ app.post('/dahua/login/first', async (req, res) => {
 
   try {
     // Aquí se usa la configuración para el primer login
-    const firstLoginResponse = await axios.post(`${domain}:443/brms/api/v1.0/accounts/authorize`, {
+    const firstLoginResponse = await axios.post(`${domain}:80/brms/api/v1.0/accounts/authorize`, {
       userName: userName,
       ipAddress: "",
       clientType: "WINPC_V2"
     });
 
-    console.log("firstLoginResponse: ", firstLoginResponse);
+    console.log("firstLoginResponse: ", firstLoginResponse.data);
     // Si la respuesta es 401 (como en la colección Postman)
     if (firstLoginResponse.status === 401) {
       const realm = firstLoginResponse.data.realm;
       const randomKey = firstLoginResponse.data.randomKey;
       // Realiza el segundo login
       const signature = generateSignature(userName, password, realm, randomKey);
-      const secondLoginResponse = await axios.post(`${domain}:443/brms/api/v1.0/accounts/authorize`, {
+      const secondLoginResponse = await axios.post(`${domain}:80/brms/api/v1.0/accounts/authorize`, {
         mac: mac,
         signature: signature,
         userName: userName,
