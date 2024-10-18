@@ -33,7 +33,7 @@ DahuaRoute.post('/Person/Groups', async (req, res) => {
 });
 
 //Get Person Details
-DahuaRoute.post('/Person/:personId', async (req, res) => {
+DahuaRoute.post('/Person/details/:personId', async (req, res) => {
   try {
     const { personId } = req.params;
     const { userName, password, mac } = req.body;
@@ -61,53 +61,41 @@ DahuaRoute.post('/Person/:personId', async (req, res) => {
 //Add Person
 DahuaRoute.post('/Person/Add', async (req, res) => {
   try {
+    console.log("Agregando nuevo registro...");
     const { userName, password, mac, userData } = req.body;
     const generateToken = await getToken(userName, password, mac);
     //Valida que exista el token
     if (generateToken != "") {
+      console.log("Obteniendo orgCode...");
       //Obtiene el listado de todos los Groups para filtrar por Nombre de Empresa
       const orgCode = await getOrgCode(userData.orgName, userData.torre, userData.piso, generateToken);
       //Si retorna un orgCode sigue
       if (orgCode != "") {
+        console.log("Creando persona...", orgCode);
         //Map new Person
         const newPersonData = {
           "baseInfo": {
-            "personId": "00009988",
+            "personId": userData.personId,
             "lastName": userData.lastName,
             "firstName": userData.firstName,
             "gender": userData.gender,
-            "orgCode": orgCode,
-            "orgCodes": [orgCode],
-            "email": userData.email,
-            "tel": userData.tel,
-            "sourceType": userData.sourceType,
-            "associateId": userData.idCRM
+            "orgCode": orgCode.toString(),
+            "source": "0"
           },
           "extensionInfo": {
-            "nickName": "",
-            "address": "",
-            "idType": "4",//ID type, 0 = ID card, 1 = Officer ID card, 2 = Student ID card, 3 = Driver's license, 4 = Passport, 5 = Tax ID, 6 = Others; 6 by default
-            "idNo": "123456",
+            "idType": "4",
+            "idNo": "5424588",
             "nationalityId": "9999",
-            "birthday": "",
-            "companyName": "CONSORCIO WTC ASUNCION",
-            "position": "",
-            "department": ""
+            "companyName": "CONSORCIO WTC ASUNCION"
           },
           "residentInfo": {
-            "houseHolder": "0",//Video intercom householder or not, 0 = No, 1 = Yes; 0 by default
-            "sipId": "",
-            "vdpUser": "0",
-            "isVdpUser": "0"
+            "houseHolder": "0",
+            "sipId": "10#1#1001",
+            "vdpUser": "1"
           },
           "authenticationInfo": {
             "startTime": "1727064000",//Start time of the validity period, timestamp, in seconds
-            "endTime": "2042683199",//End time of the validity period, timestamp, in seconds
-            "expired": "1",
-            "haveCombinationPassword": "0",
-            "combinationPassword": null,
-            "cards": [],
-            "fingerprints": []
+            "endTime": "2042683199"
           },
           "accessInfo": {
             "accessType": "0",//Access control person type, 0 = Normal, 1 = Blocklist, 2 = Visitor, 3= Patrol, 4 = VIP, 5 = Others; 0 by default
@@ -126,35 +114,24 @@ DahuaRoute.post('/Person/Add', async (req, res) => {
             "vehicles": []
           }
         };
+        console.log("newPersonData: ", newPersonData);
         //Crea el registro en Person
         const response = await axios.post(`${domain}:80/obms/api/v1.1/acs/person`, newPersonData, {
           headers: {
             'X-Subject-Token': generateToken
           }
         });
+        console.log("response add", response);
         //Envia la respuesta de la API al frontend
-        res.status(200).json(response.data); 
+        res.status(200).json(response.data);
       }
-      else
-      {
-        res.status(500).json({ error: 'No se encontró orgCode' }); 
+      else {
+        res.status(500).json({ error: 'No se encontró orgCode' });
       }
     }
     else {
       res.status(500).json({ error: 'Error al obtener token' });
     }
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('Error en la autenticación');
-  }
-});
-
-//Add Person - Test
-DahuaRoute.post('/Person/Add/Test', async (req, res) => {
-  try {
-    const { userName, password, mac, userData } = req.body;
-    console.log("userData.orgName:", userData.orgName);
-    res.status(200).json(userData);
   } catch (error) {
     console.error(error);
     res.status(500).send('Error en la autenticación');
@@ -167,6 +144,7 @@ async function getToken(userName, password, mac) {
   try {
     let firstLoginResponse;
     try {
+      console.log("Intentando primer login...");
       // Intentamos hacer el primer login
       firstLoginResponse = await axios.post(`${domain}:80/brms/api/v1.0/accounts/authorize`, {
         userName: userName,
@@ -174,7 +152,6 @@ async function getToken(userName, password, mac) {
         clientType: "WINPC_V2"
       });
     } catch (error) {
-      console.log("error: ", error);
       if (error.response && error.response.status === 401) {
         firstLoginResponse = error.response;
       } else {
