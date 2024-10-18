@@ -30,30 +30,40 @@ app.get("/", (req, res) => {
   res.status(200).send({ mensaje: "Hello WTC" })
 });
 
-//Ruta para autenticarse en la API de Dahua
+// Ruta para autenticarse en la API de Dahua
 app.post('/dahua/login', async (req, res) => {
   console.log("Iniciando primer login...");
   const { userName, password, mac } = req.body;
 
   try {
-    // Aquí se usa la configuración para el primer login
-    const firstLoginResponse = await axios.post(`${domain}:80/brms/api/v1.0/accounts/authorize`, {
-      userName: userName,
-      ipAddress: "",
-      clientType: "WINPC_V2"
-    });
+    let firstLoginResponse;
+    try {
+      // Intentamos hacer el primer login
+      firstLoginResponse = await axios.post(`${domain}:80/brms/api/v1.0/accounts/authorize`, {
+        userName: userName,
+        ipAddress: "",
+        clientType: "WINPC_V2"
+      });
+    } catch (error) {
+      // Aquí verificamos si el error es un 401
+      if (error.response && error.response.status === 401) {
+        firstLoginResponse = error.response;
+      } else {
+        // Si no es 401, enviamos el error
+        return res.status(500).json({ error: 'Error en el primer login: ' + error.message });
+      }
+    }
 
-    console.log("firstLoginResponse.status: ", firstLoginResponse.status);
-    console.log("firstLoginResponse: ", firstLoginResponse.data);
-    // Si la respuesta es 401 (como en la colección Postman)
+    // Ahora que tenemos el 401, procesamos los datos necesarios para el segundo login
     if (firstLoginResponse.status === 401) {
       console.log("Iniciando segundo login...");
       const realm = firstLoginResponse.data.realm;
       const randomKey = firstLoginResponse.data.randomKey;
       const publicKey = firstLoginResponse.data.publicKey;
-      // Realiza el segundo login
+
+      //Realiza el segundo login
       const signature = generateSignature(userName, password, realm, randomKey);
-      console.log("signature: ", signature);
+
       const secondLoginResponse = await axios.post(`${domain}:80/brms/api/v1.0/accounts/authorize`, {
         mac: mac,
         signature: signature,
@@ -65,11 +75,12 @@ app.post('/dahua/login', async (req, res) => {
         clientType: "WINPC_V2",
         userType: 0
       });
+      
+      // Respuesta del segundo login
       res.status(200).json(secondLoginResponse.data);
-    }
-    else
-    {
+    } else {
       console.log("Error. Respuesta desconocida: Status ", firstLoginResponse.status);
+      res.status(firstLoginResponse.status).json({ error: "Respuesta inesperada durante el primer login." });
     }
   } catch (error) {
     console.error('Error al conectar con la API de Dahua:', error);
