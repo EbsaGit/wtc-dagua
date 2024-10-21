@@ -14,10 +14,10 @@ const domain = `https://${localIP}`;
 //const domain = "https://192.168.100.26";
 const port = process.env.PORT || 3000;
 
-// Cargar los archivos de la clave privada y el certificado
+// Cargar los archivos del certificado y la clave privada generados por mkcert
 const sslOptions = {
-  key: fs.readFileSync(path.join(__dirname, 'cert', 'server.key')),
-  cert: fs.readFileSync(path.join(__dirname, 'cert', 'server.cert'))
+  key: fs.readFileSync(path.join(__dirname, 'cert', '192.168.100.26-key.pem')),
+  cert: fs.readFileSync(path.join(__dirname, 'cert', '192.168.100.26.pem'))
 };
 
 // Importación de rutas
