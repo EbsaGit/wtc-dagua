@@ -61,17 +61,17 @@ DahuaRoute.post('/Person/details/:personId', async (req, res) => {
 //Add Person
 DahuaRoute.post('/Person/Add', async (req, res) => {
   try {
-    console.log("Agregando nuevo registro...");
+    //console.log("Agregando nuevo registro...");
     const { userName, password, mac, userData } = req.body;
     const generateToken = await getToken(userName, password, mac);
     //Valida que exista el token
     if (generateToken != "") {
-      console.log("Obteniendo orgCode...");
+      //console.log("Obteniendo orgCode...");
       //Obtiene el listado de todos los Groups para filtrar por Nombre de Empresa
       const orgCode = await getOrgCode(userData.orgName, userData.torre, userData.piso, generateToken);
       //Si retorna un orgCode sigue
       if (orgCode != "") {
-        console.log("Creando persona...", orgCode);
+        //console.log("Creando persona...", orgCode);
         //Map new Person
         const newPersonData = {
           "baseInfo": {
@@ -114,14 +114,14 @@ DahuaRoute.post('/Person/Add', async (req, res) => {
             "vehicles": []
           }
         };
-        console.log("newPersonData: ", newPersonData);
         //Crea el registro en Person
         const response = await axios.post(`${domain}:80/obms/api/v1.1/acs/person`, newPersonData, {
           headers: {
             'X-Subject-Token': generateToken
           }
         });
-        console.log("response add", response);
+        //cierra la sesion 
+        await logout(userName, generateToken);
         //Envia la respuesta de la API al frontend
         res.status(200).json(response.data);
       }
@@ -137,6 +137,28 @@ DahuaRoute.post('/Person/Add', async (req, res) => {
     res.status(500).send('Error en la autenticación');
   }
 });
+
+//Funcion logout
+async function logout(userName, generateToken) {
+  try {
+    //Llamada a la API con Axios
+    const loginData = {
+      "userName": userName,
+      "token": generateToken
+    };
+    //console.log("loginData: ", loginData);
+    const logoutRequest = await axios.post(`${domain}:80/brms/api/v1.0/accounts/unauthorize`, loginData, {
+      headers: {
+        'X-Subject-Token': generateToken
+      }
+    })
+    console.log("Sesion cerrada");
+    return logoutRequest;
+  } catch (error) {
+    console.error('Error al conectar con la API de Dahua:', error);
+    return "";
+  }
+}
 
 //Funcion que obtiene el token temporal a través del 1er login y el 2do
 async function getToken(userName, password, mac) {

@@ -1,17 +1,26 @@
 ﻿@echo off
 REM Ruta de descarga del certificado (local donde se guardará el archivo descargado)
-SET CERT_PATH="%TEMP%\rootCA.pem"
+SET CERT_PATH=%TEMP%\rootCA.pem
 
 REM URL del archivo en la nube
 SET CERT_URL="https://files-accl.zohoexternal.com/public/workdrive-external/download/2h9xpf53947b7464d4835a84642c81bd0c5eb"
 
-REM Verificar si curl está disponible, si no, usar bitsadmin para descargar
-echo Descargando el archivo del certificado...
-curl --version >nul 2>&1
-IF %ERRORLEVEL% EQU 0 (
-    curl -o %CERT_PATH% %CERT_URL%
-) ELSE (
-    bitsadmin /transfer "DescargarCertificado" %CERT_URL% %CERT_PATH%
+REM Usar bitsadmin para descargar el certificado
+echo Intentando descargar el archivo del certificado con bitsadmin...
+bitsadmin /transfer "DescargarCertificado" %CERT_URL% %CERT_PATH%
+
+REM Verificar si bitsadmin tuvo éxito
+IF %ERRORLEVEL% NEQ 0 (
+    echo bitsadmin no está disponible o falló. Intentando con PowerShell...
+
+    REM Usar PowerShell si bitsadmin falla
+    powershell -Command "(New-Object System.Net.WebClient).DownloadFile('%CERT_URL%', '%CERT_PATH%')"
+
+    REM Verificar si PowerShell tuvo éxito
+    IF %ERRORLEVEL% NEQ 0 (
+        echo Error: No se pudo descargar el certificado usando bitsadmin ni PowerShell.
+        exit /b 1
+    )
 )
 
 REM Verificar si el archivo se descargó correctamente
