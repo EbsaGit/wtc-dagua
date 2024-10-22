@@ -11,13 +11,12 @@ const os = require('os');
 const app = express();
 const localIP = getLocalIPAddress();
 const domain = `https://${localIP}`;
-//const domain = "https://192.168.100.26";
 const port = process.env.PORT || 3000;
 
 // Cargar los archivos del certificado y la clave privada generados por mkcert
 const sslOptions = {
-  key: fs.readFileSync(path.join(__dirname, 'cert', '192.168.100.26-key.pem')),
-  cert: fs.readFileSync(path.join(__dirname, 'cert', '192.168.100.26.pem'))
+  key: fs.readFileSync(path.join(__dirname, 'cert', '10.100.100.106-key.pem')),
+  cert: fs.readFileSync(path.join(__dirname, 'cert', '10.100.100.106.pem'))
 };
 
 // Importación de rutas

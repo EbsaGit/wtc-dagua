@@ -28,4 +28,4 @@ Completar la instalación:
 7. Haz clic en Finalizar para completar el proceso de importación.
 Verás un mensaje indicando que la importación fue exitosa.
 
-# Opcion 2: Ejecutar el archivo install_ceret.bat como administrado
+# Opcion 2: Ejecutar el archivo install_ceret.bat como administrador
